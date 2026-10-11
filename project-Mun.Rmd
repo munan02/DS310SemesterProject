@@ -9,19 +9,59 @@ date: "2026-10-01"
 knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+library(tidyverse)
+library(dplyr)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+**Load the amr data.**
+```{r}
+amr_data <- read.csv("data/amr_records.csv")
+```
+
+**variables**
+```{r}
+names(amr_data)
+```
+
+**overview**
+```{r}
+glimpse(amr_data)
+```
+
+**Rename Columns**
+## The original variable names were long and difficult to read. I renamed the variables that were relevant to my analysis using clearer and shorter names. 
+
+```{r}
+amr_ecoli <- amr_data %>%
+  rename(
+   resistance = `pheno_geno_merged.resistance_phenotype`,
+   species = `pheno_geno_merged.species`,
+   year = `pheno_geno_merged.collection_year`,
+   source = `pheno_geno_merged.isolation_source`,
+   country = `pheno_geno_merged.country`,
+   antibiotic = `pheno_geno_merged.antibiotic_name`,
+   gene = `pheno_geno_merged.gene_symbol`,
+   region = `pheno_geno_merged.geographical_region`,
+   host = `pheno_geno_merged.host`,
+   method = `pheno_geno_merged.laboratory_typing_method`,
+   identity = `pheno_geno_merged.reference_sequence_identity`
+  )
+```
+
+
+**Filter Data**
+
+## The amr_data dataset contains variables that were not needed for my research question. I used select() to keep the variables that I planned to examine in this project. It made my dataset easier to work. I also used filter() to only view Eschericia coli species. 
+
+```{r}
+amr_ecoli <- amr_ecoli %>%
+  select(resistance, antibiotic, species, gene, identity, method, host, source, country, region, year) %>%
+  filter(species == "Escherichia coli", resistance != "intermediate")
+amr_ecoli
+```
+
+
+
+
