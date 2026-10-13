@@ -369,9 +369,46 @@ display: none;
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 <pre class="r"><code>library(dplyr)</code></pre>
+<p><strong>INTRODUCTION</strong> <strong>Research Question: What factors
+are associated with ampicillin resistance in Escherichia coli
+isolates?</strong></p>
+<div id="the-data-were-obtained-from-the-embl-ebi-antimicrobial-resistance-portal-available-at-httpswww.ebi.ac.ukamr.-the-portal-contains-antimicrobial-resistance-phenotype-information-together-with-genetic-and-sample-related-information." class="section level2">
+<h2>The data were obtained from the EMBL-EBI Antimicrobial Resistance
+Portal, available at <a href="https://www.ebi.ac.uk/amr/" class="uri">https://www.ebi.ac.uk/amr/</a>. The portal contains
+antimicrobial resistance phenotype information together with genetic and
+sample-related information.</h2>
+</div>
+<div id="the-amr_data-dataset-have-information-about-bacterial-species-resistance-phenotype-antibiotic-antimicrobial-resistance-associated-genes-laboratory-testing-methods-geographic-location-sample-id-genus-organism-taxon-id-collection-year-and-other-characteristics.-the-original-downloaded-dataset-contains-1191-observations-and-51-variables.-each-row-represents-a-combined-antimicrobial-resistance-record-associated-with-a-bacterial-sample-and-its-antibiotic-resistance-phenotype.-for-this-project-i-filtered-the-data-to-include-only-escherichia-coli.-the-final-dataset-contains-1175-observations-and-11-selected-variables." class="section level2">
+<h2>The amr_data dataset have information about bacterial species,
+resistance phenotype, antibiotic, antimicrobial resistance-associated
+genes, laboratory testing methods, geographic location, sample id,
+Genus, organism, taxon id, collection year, and other characteristics.
+The original downloaded dataset contains 1,191 observations and 51
+variables. Each row represents a combined antimicrobial resistance
+record associated with a bacterial sample and its antibiotic resistance
+phenotype. For this project, I filtered the data to include only
+Escherichia coli. The final dataset contains 1,175 observations and 11
+selected variables.</h2>
+</div>
+<div id="i-chose-this-dataset-because-i-am-interested-in-microbiology-antimicrobial-resistance-and-understanding-why-some-bacteria-become-difficult-to-treat-with-antibiotics.-as-a-biology-student-i-find-it-interesting-to-examine-how-genetic-characteristics-geographic-location-collection-year-and-sample-source-may-be-related-to-antibiotic-resistance." class="section level2">
+<h2>I chose this dataset because I am interested in microbiology,
+antimicrobial resistance, and understanding why some bacteria become
+difficult to treat with antibiotics. As a biology student, I find it
+interesting to examine how genetic characteristics, geographic location,
+collection year, and sample source may be related to antibiotic
+resistance.</h2>
 <p><strong>Load the amr data.</strong></p>
+</div>
+<div id="i-first-loaded-the-original-amr-dataset-from-the-data-folder-into-r.-i-saved-the-dataset-as-amr_data-so-that-i-could-examine-and-clean-the-dataset-before-beginning-the-analysis." class="section level2">
+<h2>I first loaded the original AMR dataset from the data folder into R.
+I saved the dataset as amr_data so that I could examine and clean the
+dataset before beginning the analysis.</h2>
 <pre class="r"><code>amr_data &lt;- read.csv(&quot;data/amr_records.csv&quot;)</code></pre>
 <p><strong>variables</strong></p>
+</div>
+<div id="i-used-names-to-examine-the-variables-names-in-the-original-dataset." class="section level2">
+<h2>I used names() to examine the variables names in the original
+dataset.</h2>
 <pre class="r"><code>names(amr_data)</code></pre>
 <pre><code>##  [1] &quot;pheno_geno_merged.antibiotic_name&quot;            
 ##  [2] &quot;pheno_geno_merged.resistance_phenotype&quot;       
@@ -425,6 +462,10 @@ display: none;
 ## [50] &quot;pheno_geno_merged.geographical_region&quot;        
 ## [51] &quot;pheno_geno_merged.geographical_subregion&quot;</code></pre>
 <p><strong>overview</strong></p>
+</div>
+<div id="the-glimse-function-to-examine-the-variable-types-and-the-structure-of-the-dataset." class="section level2">
+<h2>The glimse() function to examine the variable types and the
+structure of the dataset.</h2>
 <pre class="r"><code>glimpse(amr_data)</code></pre>
 <pre><code>## Rows: 1,191
 ## Columns: 51
@@ -497,11 +538,20 @@ to my analysis using clearer and shorter names.</p>
    identity = `pheno_geno_merged.reference_sequence_identity`
   )</code></pre>
 <p><strong>Filter Data</strong></p>
-<div id="the-amr_data-dataset-contains-variables-that-were-not-needed-for-my-research-question.-i-used-select-to-keep-the-variables-that-i-planned-to-examine-in-this-project.-it-made-my-dataset-easier-to-work.-i-also-used-filter-to-only-view-eschericia-coli-species." class="section level2">
-<h2>The amr_data dataset contains variables that were not needed for my
-research question. I used select() to keep the variables that I planned
-to examine in this project. It made my dataset easier to work. I also
-used filter() to only view Eschericia coli species.</h2>
+</div>
+<div id="i-used-select-to-keep-the-variables-that-i-planned-to-examine-in-this-project.-i-am-comparing-resistance-and-susceptible-isolates.-so-resistance-is-my-response-variable.-i-also-removed-the-single-intermediate-resistance-observation.-it-will-only-have-two-clear-categories-resistant-and-susceptible.-gene-and-identity-variable-would-help-me-to-view-genetic-characteristics-year-to-explore-changes-over-time.-country-and-region-to-identify-geographic-patterns.-the-source-and-host-variables-would-allow-me-to-examine-the-origin-of-the-isolate.-method-variable-will-allow-to-view-different-laboratory-testing-methods.-the-species-column-define-the-key-organism-and-antibiotic-column-is-the-specific-drug.-i-used-filter-to-only-view-escherichia-coli-isolates." class="section level2">
+<h2>I used select() to keep the variables that I planned to examine in
+this project. I am comparing resistance and susceptible isolates. So
+resistance is my response variable. I also removed the single
+intermediate resistance observation. It will only have two clear
+categories (resistant and susceptible). Gene and identity variable would
+help me to view genetic characteristics, year to explore changes over
+time. Country and region to identify geographic patterns. The source and
+host variables would allow me to examine the origin of the isolate.
+Method variable will allow to view different laboratory testing methods.
+The species column define the key organism and antibiotic column is the
+specific drug. I used filter() to only view Escherichia coli
+isolates.</h2>
 <pre class="r"><code>amr_ecoli &lt;- amr_ecoli %&gt;%
   select(resistance, antibiotic, species, gene, identity, method, host, source, country, region, year) %&gt;%
   filter(species == &quot;Escherichia coli&quot;, resistance != &quot;intermediate&quot;)

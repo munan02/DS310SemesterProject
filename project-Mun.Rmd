@@ -15,17 +15,37 @@ library(tidyverse)
 library(dplyr)
 ```
 
+**INTRODUCTION**
+**Research Question: What factors are associated with ampicillin resistance in Escherichia coli isolates?**
+
+## The data were obtained from the EMBL-EBI Antimicrobial Resistance Portal, available at https://www.ebi.ac.uk/amr/. The portal contains antimicrobial resistance phenotype information together with genetic and sample-related information.
+
+
+## The amr_data dataset have information about bacterial species, resistance phenotype, antibiotic, antimicrobial resistance-associated genes, laboratory testing methods, geographic location, sample id, Genus, organism, taxon id, collection year, and other characteristics. The original downloaded dataset contains 1,191 observations and 51 variables. Each row represents a combined antimicrobial resistance record associated with a bacterial sample and its antibiotic resistance phenotype. For this project, I filtered the data to include only Escherichia coli. The final dataset contains 1,175 observations and 11 selected variables.
+
+## I chose this dataset because I am interested in microbiology, antimicrobial resistance, and understanding why some bacteria become difficult to treat with antibiotics. As a biology student, I find it interesting to examine how genetic characteristics, geographic location, collection year, and sample source may be related to antibiotic resistance. 
+
+
 **Load the amr data.**
+
+## I first loaded the original AMR dataset from the data folder into R. I saved the dataset as amr_data so that I could examine and clean the dataset before beginning the analysis.
+
 ```{r}
 amr_data <- read.csv("data/amr_records.csv")
 ```
 
 **variables**
+
+## I used names() to examine the  variables names in the original dataset. 
+
 ```{r}
 names(amr_data)
 ```
 
 **overview**
+
+## The glimse() function to examine the variable types and the structure of the dataset.  
+
 ```{r}
 glimpse(amr_data)
 ```
@@ -50,10 +70,10 @@ amr_ecoli <- amr_data %>%
   )
 ```
 
-
 **Filter Data**
 
-## The amr_data dataset contains variables that were not needed for my research question. I used select() to keep the variables that I planned to examine in this project. It made my dataset easier to work. I also used filter() to only view Eschericia coli species. 
+## I used select() to keep the variables that I planned to examine in this project. I am comparing resistance and susceptible isolates. So resistance is my response variable. I also removed the single intermediate resistance observation. It will only have two clear categories (resistant and susceptible). Gene and identity variable would help me to view genetic characteristics, year to explore changes over time. Country and region to identify geographic patterns. The source and host variables would allow me to examine the origin of the isolate. Method variable will allow to view different laboratory testing methods. The species column define the key organism and antibiotic column is the specific drug. I used filter() to only view Escherichia coli isolates.
+
 
 ```{r}
 amr_ecoli <- amr_ecoli %>%
