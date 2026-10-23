@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Factors Associated with Ampicillin Resistance in Escherichia coli"
 author: "Muntahin Maisha"
 output: html_document
 date: "2026-10-01"
@@ -12,76 +12,304 @@ knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = TRUE)
 
 ```{r}
 library(tidyverse)
-library(dplyr)
 ```
 
-**INTRODUCTION**
+## INTRODUCTION
+
 **Research Question: What factors are associated with ampicillin resistance in Escherichia coli isolates?**
 
-## The data were obtained from the EMBL-EBI Antimicrobial Resistance Portal, available at https://www.ebi.ac.uk/amr/. The portal contains antimicrobial resistance phenotype information together with genetic and sample-related information.
+The data were obtained from the EMBL-EBI Antimicrobial Resistance Portal, available at https://www.ebi.ac.uk/amr/. The portal contains antimicrobial resistance phenotype information together with genetic and sample-related information.
 
+The "amr_data" dataset have information about bacterial species, resistance phenotype, antibiotic, antimicrobial resistance-associated genes, laboratory testing methods, geographic location, sample id, Genus, organism, taxon id, collection year, and other characteristics. The original downloaded dataset contains 1,191 observations and 51 variables. Each row is one ampicillin test on one bacterial sample, together with one resistance mutation found in that sample. I kept only Escherichia coli, removed one intermediate record, and removed one repeated sample. The final dataset has 1,174 rows and 12 variables.
 
-## The amr_data dataset have information about bacterial species, resistance phenotype, antibiotic, antimicrobial resistance-associated genes, laboratory testing methods, geographic location, sample id, Genus, organism, taxon id, collection year, and other characteristics. The original downloaded dataset contains 1,191 observations and 51 variables. Each row represents a combined antimicrobial resistance record associated with a bacterial sample and its antibiotic resistance phenotype. For this project, I filtered the data to include only Escherichia coli. The final dataset contains 1,175 observations and 11 selected variables.
+**Why I chose this dataset.** I like microbiology and antimicrobial resistance. I want to understand why some bacteria become hard to treat with antibiotics. As a biology student, I want to see how genes, location, collection year, and sample source connect to antibiotic resistance. 
 
-## I chose this dataset because I am interested in microbiology, antimicrobial resistance, and understanding why some bacteria become difficult to treat with antibiotics. As a biology student, I find it interesting to examine how genetic characteristics, geographic location, collection year, and sample source may be related to antibiotic resistance. 
+##Data Wrangling 
 
+## Data Loading
 
-**Load the amr data.**
-
-## I first loaded the original AMR dataset from the data folder into R. I saved the dataset as amr_data so that I could examine and clean the dataset before beginning the analysis.
+I first loaded the original AMR dataset from the data folder into R. I saved the dataset as amr_data so that I could examine and clean the dataset before beginning the analysis.
 
 ```{r}
-amr_data <- read.csv("data/amr_records.csv")
+amr_data <- read_csv("data/amr_records.csv")
 ```
 
-**variables**
-
-## I used names() to examine the  variables names in the original dataset. 
+## variables
+I used **names()** to examine the  variables names in the original dataset. 
 
 ```{r}
 names(amr_data)
 ```
 
-**overview**
-
-## The glimse() function to examine the variable types and the structure of the dataset.  
+## overview
+The **glimpse()** function to examine the variable types and the structure of the dataset.  
 
 ```{r}
 glimpse(amr_data)
 ```
 
-**Rename Columns**
-## The original variable names were long and difficult to read. I renamed the variables that were relevant to my analysis using clearer and shorter names. 
+## Rename Columns
+The original variable names are long and hard to read. Each one starts with "pheno_geno_merged-". I used rename_with() function to call all columns and str_remove() to delete the prefix. Then I used rename() to give the 8 variables I need shorter names.
 
 ```{r}
 amr_ecoli <- amr_data %>%
+  rename_with(~ str_remove(.x, "pheno_geno_merged-")) %>%
   rename(
-   resistance = `pheno_geno_merged.resistance_phenotype`,
-   species = `pheno_geno_merged.species`,
-   year = `pheno_geno_merged.collection_year`,
-   source = `pheno_geno_merged.isolation_source`,
-   country = `pheno_geno_merged.country`,
-   antibiotic = `pheno_geno_merged.antibiotic_name`,
-   gene = `pheno_geno_merged.gene_symbol`,
-   region = `pheno_geno_merged.geographical_region`,
-   host = `pheno_geno_merged.host`,
-   method = `pheno_geno_merged.laboratory_typing_method`,
-   identity = `pheno_geno_merged.reference_sequence_identity`
+    resistance = resistance_phenotype,
+    antibiotic = antibiotic_name,
+    year = collection_year,
+    source = isolation_source,
+    gene = gene_symbol,
+    identity = reference_sequence_identity,
+    biosample = BioSample_ID,
+    measurement = gen_measurement
   )
-```
-
-**Filter Data**
-
-## I used select() to keep the variables that I planned to examine in this project. I am comparing resistance and susceptible isolates. So resistance is my response variable. I also removed the single intermediate resistance observation. It will only have two clear categories (resistant and susceptible). Gene and identity variable would help me to view genetic characteristics, year to explore changes over time. Country and region to identify geographic patterns. The source and host variables would allow me to examine the origin of the isolate. Method variable will allow to view different laboratory testing methods. The species column define the key organism and antibiotic column is the specific drug. I used filter() to only view Escherichia coli isolates.
-
-
-```{r}
-amr_ecoli <- amr_ecoli %>%
-  select(resistance, antibiotic, species, gene, identity, method, host, source, country, region, year) %>%
-  filter(species == "Escherichia coli", resistance != "intermediate")
 amr_ecoli
 ```
 
+## Data Filtering
+I used select() to keep the 13 variables I plan to study. Resistance is my response variable. I compare resistant and susceptible isolates, so I removed the one intermediate record. Gene and identity show the genetic side. Year shows change over time. Country and geographic region will help me to identify geographic patterns. The source variables would allow me to examine the origin of the isolate.The species column define the key organism and antibiotic column is the specific drug. 
+
+I used filter() to only view Escherichia coli isolates, and with their unique biosample. One sample appeared twice. I grouped the data by biosample with group_by(). I kept the sample with measurement value. I used ungroup() to clear the grouping.
+
+```{r}
+amr_ecoli <- amr_ecoli %>%
+select(resistance, antibiotic, species, gene, identity, biosample, host, source, country, year, geographical_region, measurement) %>%
+  filter(species == "Escherichia coli", resistance != "intermediate") %>%
+  group_by(biosample) %>%
+  filter(n() == 1 | !is.na(measurement)) %>%
+  ungroup()
+amr_ecoli
+```
+
+The final dataset has 1,174 rows and 12 variables
+
+**Missing Value Check**
+
+I used summarise(across(everything())) to count the missing values in every column. Then I used pivot_longer() to turn the result into two columns: the variable and its number of missing values.
+
+```{r}
+missing_data <- amr_ecoli %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "missing_value") %>%
+  arrange(desc(missing_value))
+missing_data
+```
+Source has the most missing values (335 of 1,174). Measurement has 124. Country and geographical region each have 62. Year has 20, and host has 18. The other variables have none. 
+
+## Visualizations:
+
+**Resistance Distribution**
+First I looked at the response variable alone. I used count() to count each resistance group and mutate() to turn the counts into percentages. Then I made a bar chart.
+
+```{r}
+amr_ecoli %>%
+  count(resistance) %>%
+  mutate(percent = round(n / sum(n) * 100, 1))
+```
+
+```{r}
+ggplot(amr_ecoli, aes(x = resistance, fill = resistance)) +
+  geom_bar(color = "black") +
+  scale_fill_manual(
+    values = c("resistant" = "pink2", "susceptible" = "purple3")
+  ) +
+  labs(
+    title = "Distribution of Ampicillin Resistance in E. coli",
+    x = "Resistance Phenotype",
+    y = "Number of Records"
+  ) +
+  theme(legend.position = "none")
+```
+
+This graph shows the overall distribution of resistance. Out of 1,174 E. coli records, 497 (42.3%) are resistant and 677 (57.7%) are susceptible to ampicillin. The two groups are fairly balanced, so I can compare them.
+
+**Resistance by gene**
+
+I used group_by() to group the data by gene. I used summarise() to count the total records, the resistant records, and the percent resistant in each gene. I used arrange(desc()) to sort the genes from the most records to the fewest.
+
+Then I made a proportional stacked bar chart. Each bar is one gene. The colors show the share of resistant and susceptible records. I used scale_fill_manual() to keep the same colors across my work.
+
+```{r}
+gene_group <- amr_ecoli %>%
+  group_by(gene) %>%
+  summarise(total = n(),
+            resistant = sum(resistance == "resistant"),
+            percent_resistant = round(resistant / total * 100, 1)) %>%
+  arrange(desc(total))
+gene_group
+
+```
 
 
+```{r}
+ggplot(amr_ecoli, aes(x = gene, fill = resistance)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "resistant" = "pink2",
+      "susceptible" = "purple4"
+    ) )+
+  labs(
+    title = "Ampicillin Resistance by Gene",
+    x = "Gene",
+    y = "Proportion of Records",
+    fill = "Resistance"
+  )
+```
 
+This plot compares resistant and susceptible records within each gene. The acrR, acrR_1, acrR_2, and soxR groups are 100% resistant, but they have only 1 to 10 records each. The soxS group is 90.3% resistant, with 31 records. The marR gene has the most records (1,128), and only 40.2% of them are resistant. The group sizes are very uneven, so I cannot confidently interpret the gene factor with ampicillin resistance.
+
+**Resistance By Region**
+
+I removed the rows with a missing region. Then I grouped by geographical_region and counted the total, resistant, and percent resistant records in each region. I used ggplot() and geom_col() to create a bar chart showing the percentage of resistant records in each region. This graph helps me compare ampicillin resistance percentages across geographic regions and explore whether geographic location is associated with resistance.
+
+```{r}
+amr_region <- amr_ecoli %>%
+  filter(!is.na(geographical_region)) %>%
+  group_by(geographical_region) %>%
+  summarise(total = n(),
+            resistant = sum(resistance == "resistant"),
+            percent_resistant = round(resistant / total * 100, 1)
+  ) %>%
+  arrange(desc(total))
+amr_region
+```
+
+```{r}
+amr_region %>%
+  ggplot(aes(x = geographical_region,
+             y = percent_resistant)) +
+  geom_col(fill = "pink2", color = "black") +
+  labs(
+    title = "Ampicillin Resistance by Geographic Region",
+    x = "Geographic Region",
+    y = "Resistant Records (%)"
+  )
+```
+
+This graph shows ampicillin resistance in each region. Asia has the highest resistance (91.7%, 11 of 12 records). Africa has 66.7% (6 of 9). Europe has 46.4% (109 of 235). The Americas have the lowest, at 36.6% (313 of 856). Asia and Africa have very few records, so I cannot trust their percentages. The results suggest that region may be linked to resistance.
+
+**Resistance By Year**
+First I looked at collection year alone. I used summarise() to get the minimum, quartiles, IQR, mean, standard deviation, and maximum.
+
+
+```{r}
+amr_ecoli %>%
+  filter(!is.na(year)) %>%
+  summarise(n = n(),
+            min = min(year),
+            Q1 = quantile(year, 0.25),
+            median = median(year),
+            Q3 = quantile(year, 0.75),
+            IQR = IQR(year),
+            mean = round(mean(year), 1),
+            sd = round(sd(year), 1),
+            max = max(year))
+```
+
+The records run from 2008 to 2024. The median year is 2019, and the middle half of the records fall between 2015 and 2020.
+
+
+Next I grouped by year and calculated the percent resistant in each year.
+
+```{r}
+amr_year <- amr_ecoli%>%
+  filter(!is.na(year)) %>%
+  group_by(year) %>%
+  summarise(
+    total = n(),
+    resistant = sum(resistance == "resistant"),
+    percent_resistant = round(resistant / total * 100, 1)
+  ) %>%
+  arrange(desc(year))
+amr_year 
+```
+
+
+```{r}
+amr_year %>%
+ggplot(aes(x = year, y = percent_resistant)) +
+  geom_line(color = "pink3") +
+  geom_point(color = "purple") +
+  labs(
+    title = "Ampicillin Resistance Over Time",
+    x = "Collection Year",
+    y = "Percent Resistant (%)"
+  )
+```
+
+This graph shows how the percent of resistant records changed across collection years from 2008 to 2024. The lowest percentage was in 2018 (0%), while the highest was in 2021 (100%). Resistance was around 33% in 2020 and increased to 75% in 2024. However, some years had very few records, which may affect the reliability of these percentages. It would be interesting to investigate why the resistance percentage increased after 2020 and whether this change is related to differences in sample sizes or other factors.
+
+**Collection Year and Region** 
+I wanted to know if region and year are connected. I made a boxplot of collection year for each region.
+
+```{r}
+amr_ecoli %>%
+  filter(!is.na(year), !is.na(geographical_region)) %>%
+  ggplot(aes(x = geographical_region, y = year, fill = geographical_region)) +
+  geom_boxplot(fill = "pink") +
+  labs(title = "Collection Year by Geographic Region",
+       x = "Geographic Region",
+       y = "Collection Year") +
+  theme(legend.position = "none")
+```
+
+The median year is very different in each region. It is about 2009 in Africa, 2014 in Europe, 2015 in Asia, and 2020 in the Americas. The middle half of the records for Americas and Europe falls within about 1 year (2019 to 2020 in the Americas, and 2013 to 2014 in Europe). So most records in those regions come from just one or two years. Asia and Africa have very few records (12 and 9). TThe dots are outliers. The Americas have many dots between 2008 and 2017 and a few after 2020. Europe has dots in 2008 to 2011 and 2016 to 2017. Asia has one dot at 2021, and Africa has dots at 2013 and 2014. Africa has no records after 2014, so we cannot interpret anything about Africa in 2020.
+
+## Reference Sequence Identity
+
+Identity shows how closely each sample's gene matches the reference sequence. I used summarise() to get the summary statistics
+
+```{r}
+amr_ecoli %>%
+  summarise(min = min(identity),
+            Q1 = quantile(identity, 0.25),
+            median = median(identity),
+            Q3 = quantile(identity, 0.75),
+            IQR = IQR(identity),
+            mean = round(mean(identity), 2),
+            sd = round(sd(identity), 2),
+            max = max(identity))
+```
+
+```{r}
+ggplot(amr_ecoli, aes(x = identity)) +
+  geom_histogram(binwidth = 1, fill = "pink2", color = "black") +
+  labs(
+    title = "Reference Sequence Identity",
+    x = "Identity",
+    y = "Number of Records"
+  )
+```
+
+The identity values range from 97.2% to 99.5%, with a mean of 98.0% and a median of 97.9%. The shape of the distribution is concentrated around 98%, with a few higher values. The center is around 97.9-98.0%. The spread is small, with a standard deviation of 0.24 and an IQR of 0, meaning the middle 50% of the records have the same identity value at the reported precision.
+
+This suggests that most records have very similar reference sequence identity values. However, this graph alone does not show whether sequence identity is associated with ampicillin resistance.
+
+**Resistance By Source**
+The source column holds free text with many different values.  I used filter() to remove records with missing sources and group_by(source) to group records by their isolation source. Then I used summarise() to calculate the total number of records, resistant records, and percentage of resistant records for each source. I used arrange(desc(total)) to sort the sources from the highest to the lowest number of records.
+
+```{r}
+amr_host <- amr_ecoli %>%
+  filter(!is.na(source)) %>%
+  group_by(source) %>%
+  summarise(total = n(),
+            resistant = sum(resistance == "resistant"),
+            percent_resistant = round(resistant / total * 100, 1)) %>%
+  arrange(desc(total))
+amr_host
+```
+
+I wanted to check the proportion to see which source has the highest resistance records. But I don't know how to remvoe the texts from the columns. I would like to analyze this also. 
+
+## Limitations
+
+The records are not spread evenly. Most come from the Americas (856 of the 1,112 records with a region). Most were also collected in 2019 and 2020 (690 of the 1,154 records with a year), and almost all of those come from the Americas. Region, year, and source overlap, so I cannot tell which one is really linked to resistance.
+
+Some groups are very small. Asia has 12 records and Africa has 9. Most genes have only a few records, and 1,128 of the 1,174 records carry the marR gene. I cannot compare these groups with confidence.
+
+Some variables have missing values. Source is missing for 335 records, country and region for 62, year for 20, and host for 18. I left out these records when I studied each variable, so each graph uses a different number of records. These limitations make it difficult to compare groups fairly and draw strong conclusions from the results.
